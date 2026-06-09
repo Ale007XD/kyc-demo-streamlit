@@ -1,420 +1,265 @@
 # kyc-demo-streamlit
 
-Governance-first KYC demo built on top of the nano-vm ecosystem.
+**Governance layer demo built on top of a KYC pipeline.**
 
-Interactive Streamlit SPA demonstrating:
-
-* deterministic FSM execution for LLM pipelines
-* governance-aware orchestration
-* execution trace analysis
-* entropy / instability detection
-* policy locks and auditability
-* adversarial fault injection
-* replayable execution semantics
+This is not a KYC product. This is a demonstration of execution governance over an AI-driven compliance pipeline.
 
 ---
 
-# Overview
+## What this is not
 
-`kyc-demo-streamlit` is a public demo application for the nano-vm ecosystem:
+- Not OCR
+- Not identity verification
+- Not liveness detection
+- Not sanctions screening
+- Not a competitor to Jumio, Onfido, or Comply Advantage
 
-* `llm-nano-vm`
-* `nano-vm-mcp`
-* `nano-vm-dev-agent`
-
-The demo simulates a KYC / AML review pipeline and visualizes how governance and deterministic orchestration differ from naïve agent execution.
-
-The application is intentionally designed as:
-
-* governance-first
-* replay-oriented
-* audit-oriented
-* traceable
-* failure-visible
-
-This is not a chatbot UI.
-
-This is an execution-governance visualization system.
+Those systems sit *below* nano-vm in the stack. This demo governs them — it does not replace them.
 
 ---
 
-# Core Concepts
+## What this is
 
-## Deterministic FSM Runtime
+An interactive visualization of how a governance runtime behaves when placed above an AI pipeline.
 
-The pipeline executes as a deterministic finite-state machine instead of unconstrained autonomous agent loops.
+The demo simulates six KYC pipeline steps, then shows what happens to execution traces, receipts, and audit artifacts when the governance layer is intact — and when it's deliberately broken.
 
-Each step has explicit transitions and governance constraints.
+```
+OCR / Liveness / Screening providers
+              ↓
+   nano-vm Governance Layer       ← this demo
+              ↓
+   Human / Compliance Decision
+```
 
-Example pipeline:
+The governance layer controls:
 
-```text
+- which steps can execute
+- in what order
+- with what outputs
+- under what policy constraints
+- producing what verifiable artifacts
+
+It does not perform identity verification. It governs the execution of the pipeline that does.
+
+---
+
+## Why this matters
+
+Most AI demos optimize for accuracy.
+
+This demo optimizes for auditability.
+
+Every decision produces an execution trace.  
+Every trace produces a deterministic receipt.  
+Every receipt is a recomputable projection of the trace — independent of the model.
+
+```
+Receipt = f(Trace)
+```
+
+This is the property that makes governed AI execution auditable: the receipt can be verified without re-running the model.
+
+---
+
+## Stack position
+
+```
+Data / Document Layer
+        ↓
+OCR / Screening / Liveness
+  (Jumio · Onfido · Comply Advantage)
+        ↓
+nano-vm Execution Governance Layer   ← what this demo shows
+        ↓
+Execution Trace + Receipt
+        ↓
+Human Review / Compliance Decision
+```
+
+nano-vm sits between the AI pipeline and the compliance decision. It controls *what the agent does* — not what data it sees (that's Archestra, a complementary layer).
+
+---
+
+## Pipeline
+
+The demo executes a six-step KYC review pipeline under FSM governance:
+
+```
 collect_customer_data
-    ↓
+        ↓
 screen_sanctions
-    ↓
+        ↓
 adverse_media_search
-    ↓
+        ↓
 agent_review
-    ↓
+        ↓
 human_approval
-    ↓
+        ↓
 governance_seal
 ```
 
----
-
-## Governance Layer
-
-The demo visualizes:
-
-* policy enforcement
-* execution boundaries
-* capability restrictions
-* trace projection
-* deterministic execution flow
-* operator checkpoints
+Each step has explicit transition constraints. The model cannot reorder, skip, or override them.
 
 ---
 
-## Trace Analysis
+## Execution artifacts
 
-The runtime generates execution traces that are analyzed post-hoc.
+Every run produces:
 
-Metrics include:
+| Artifact | Description |
+| :--- | :--- |
+| **Trace** | Step-by-step execution record with SHA-256 Merkle chain |
+| **TraceHealthReport** | Rollback density, tool churn rate, path variance, transition entropy |
+| **ExecutionReceipt** | Minimal decision state — `Receipt = f(Trace)` |
+| **NarrativeReceipt** | Human-readable summary for compliance review |
 
-* rollback density
-* tool churn rate
-* path variance
-* transition entropy
-* invariant violations
+---
 
-The analyzer is intentionally implemented as:
+## Fault injection
 
-```text
-Trace → Analyzer → Receipt
+Seven adversarial injectors demonstrate how the governance layer responds to corruption and attack:
+
+| Injector | What it simulates |
+| :--- | :--- |
+| `invalid_program` | Malformed program structure before execution |
+| `skip_step` | Attempt to bypass a required step |
+| `reorder_steps` | Steps submitted out of governance order |
+| `tool_injection` | Unauthorized tool call injected into pipeline |
+| `policy_bypass` | Attempt to execute without policy constraints |
+| `corrupt_receipt` | Receipt tampered after generation |
+| `gdpr_erase` | Tombstoning event mid-pipeline |
+
+The injectors make visible what silent failure looks like — and why deterministic enforcement matters.
+
+---
+
+## Built with the agent it governs
+
+Part of this codebase was written by `nano-vm-dev-agent` — the same governed execution runtime that the demo visualizes.
+
+The agent operates under the same governance model as the KYC pipeline:
+
+```
+Patch Proposal
+      ↓
+validate_staged_mypy()    ← tmpdir gate, disk untouched
+      ↓
+commit_patches()          ← atomic write on mypy pass
+      ↓
+run_pytest()              ← structural gate
+      ↓
+ExecutionReceipt          ← verifiable outcome
 ```
 
-NOT:
+Every code change went through the same receipt-producing execution pipeline the demo shows. The governance model is not a demo artifact — it's the development environment.
 
-```text
-Runtime → mutable hidden state
+---
+
+## Stack
+
+- Python 3.10+
+- Streamlit 1.35+
+- llm-nano-vm
+- nano-vm-mcp
+- Pydantic v2
+- pytest
+- mypy --strict
+- Ruff
+
+---
+
+## Architecture
+
 ```
-
----
-
-## Fault Injection
-
-The demo includes adversarial injectors to simulate runtime corruption and governance failures.
-
-Available injectors:
-
-* invalid_program
-* skip_step
-* reorder_steps
-* tool_injection
-* policy_bypass
-* corrupt_receipt
-* gdpr_erase
-
-These demonstrate how deterministic governance systems behave under failure and attack conditions.
-
----
-
-# Stack
-
-* Python 3.10+
-* Streamlit 1.35+
-* llm-nano-vm
-* nano-vm-mcp
-* Pydantic v2
-* pytest
-* mypy --strict
-* Ruff
-
----
-
-# Architecture
-
-```text
 app.py
 │
 ├── components/
-│   ├── comparison_panel.py
-│   ├── governance_stream.py
-│   ├── policy_lock.py
-│   ├── trace_health.py
-│   ├── entropy_panel.py
-│   ├── injector_panel.py
-│   ├── narrative_receipt.py
-│   └── audit_panel.py
+│   ├── comparison_panel.py     ← naïve vs governed execution
+│   ├── governance_stream.py    ← real-time governance events
+│   ├── policy_lock.py          ← immutable checkpoints
+│   ├── trace_health.py         ← runtime health metrics
+│   ├── entropy_panel.py        ← transition entropy visualization
+│   ├── injector_panel.py       ← adversarial fault injection
+│   ├── narrative_receipt.py    ← human-readable receipt
+│   └── audit_panel.py          ← audit metadata
 │
 ├── engine/
-│   ├── mock_runtime.py
-│   ├── program_validator.py
-│   └── trace_analyzer.py
+│   ├── mock_runtime.py         ← simulated FSM execution
+│   ├── program_validator.py    ← pre-flight static analysis
+│   └── trace_analyzer.py       ← post-hoc trace interpretation
 │
 ├── store/
-│   ├── execution_state.py
-│   └── injector_state.py
+│   ├── execution_state.py      ← session state management
+│   └── injector_state.py       ← injector configuration
 │
-└── tests/
+└── tests/                      ← 51 tests, mypy --strict
 ```
 
 ---
 
-# Installation
-
-## Clone repository
+## Installation
 
 ```bash
 git clone https://github.com/Ale007XD/kyc-demo-streamlit.git
 cd kyc-demo-streamlit
-```
-
----
-
-## Create virtual environment
-
-```bash
 python -m venv .venv
-source .venv/bin/activate
-```
-
-Windows:
-
-```powershell
-.venv\Scripts\activate
-```
-
----
-
-## Install dependencies
-
-```bash
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
 ---
 
-# Run Application
+## Run
 
 ```bash
 streamlit run app.py
 ```
 
-Default URL:
-
-```text
-http://localhost:8501
-```
+Default: `http://localhost:8501`
 
 ---
 
-# Testing
-
-## Run pytest
+## Testing
 
 ```bash
-pytest -q
-```
-
-Expected:
-
-```text
-51 passed
+pytest -q        # 51 passed
+mypy .           # Success: no issues found
 ```
 
 ---
 
-## Run mypy
+## Design principles
 
-```bash
-mypy .
+**Trace as source of truth.** Receipts and analysis are projections. The trace is authoritative.
+
+**Post-hoc analysis only.** `TraceAnalyzer` never mutates runtime state. `Receipt = f(Trace)` is computed after the fact, not during execution.
+
+**Failure as first-class outcome.** `FAILED`, `POLICY_BLOCKED`, `INSUFFICIENT_DATA` are legitimate terminal states, not exceptions to be swallowed. The demo surfaces them intentionally.
+
+**Governance is structural.** Evaluator blindness, policy enforcement, and transition constraints are properties of the runtime — not configurations, not prompts.
+
+---
+
+## Related projects
+
+| Project | Role |
+| :--- | :--- |
+| [llm-nano-vm](https://github.com/Ale007XD/nano_vm) | Execution governance runtime — core library |
+| [nano-vm-mcp](https://github.com/Ale007XD/nano-vm-mcp) | MCP gateway with GovernanceEnvelope and SQLite WAL |
+| nano-vm-dev-agent | Governed development agent — wrote part of this codebase |
+
+---
+
+## Status
+
 ```
-
-Expected:
-
-```text
-Success: no issues found
-```
-
----
-
-# Demo Features
-
-## Comparison Panel
-
-Compares:
-
-* naïve agent execution
-* governed deterministic execution
-
----
-
-## Pre-flight Validation
-
-Validates program structure before execution:
-
-* missing targets
-* unreachable nodes
-* invalid transitions
-* execution integrity
-
----
-
-## Governance Stream
-
-Real-time visualization of governance events and execution flow.
-
----
-
-## Policy Lock
-
-Shows immutable governance checkpoints and execution sealing.
-
----
-
-## Trace Health
-
-Displays runtime health metrics and execution anomalies.
-
----
-
-## Entropy Panel
-
-Visualizes transition entropy and instability indicators.
-
-High entropy may indicate:
-
-* nondeterministic branching
-* unstable orchestration
-* semantic drift
-* probabilistic execution collapse
-
----
-
-## Narrative Receipt
-
-Human-readable execution receipt generated from deterministic trace data.
-
----
-
-## Audit Panel
-
-Displays audit-oriented execution metadata and governance artifacts.
-
----
-
-# Design Principles
-
-## Governance-first
-
-Governance is part of runtime semantics — not an external observer.
-
----
-
-## Trace as Source of Truth
-
-Execution traces are authoritative.
-
-Receipts and analysis are projections.
-
----
-
-## Post-hoc Analysis
-
-The analyzer does not mutate runtime state.
-
-```text
-TraceAnalyzer = pure post-processing layer
-```
-
----
-
-## Explicit Failure Visibility
-
-Failures are surfaced intentionally.
-
-The system avoids hidden retries and silent correction.
-
----
-
-# Constraints
-
-Important runtime constraints:
-
-* NO eval()/exec()
-* AST-based condition engine only
-* deterministic step transitions
-* terminal states explicitly marked
-* no hidden autonomous loops
-* no method calls in DSL conditions
-
----
-
-# Current Status
-
-```text
 sprint_kyc_demo: COMPLETE
+12 iterations · 51/51 pytest PASS · mypy strict PASS
 ```
 
-Results:
-
-* 12 iterations
-* 51/51 pytest PASS
-* mypy strict PASS
-* governance-first SPA complete
-
 ---
 
-# Related Projects
-
-## llm-nano-vm
-
-Deterministic FSM runtime for LLM pipelines.
-
-## nano-vm-mcp
-
-MCP gateway and orchestration layer for nano-vm.
-
-## nano-vm-dev-agent
-
-Governed development agent with transactional patching.
-
----
-
-# Roadmap
-
-Planned next steps:
-
-* ExecutionReceipt infrastructure
-* OpenTelemetry spans
-* per-model divergence metrics
-* vm.step() incremental execution
-* governed circuit breaker
-* semantic drift analysis
-
----
-
-# Philosophy
-
-Most agent systems optimize for autonomy.
-
-nano-vm optimizes for:
-
-* determinism
-* governance
-* replayability
-* auditability
-* constrained execution semantics
-
-The objective is not “more autonomous agents”.
-
-The objective is reliable execution infrastructure for probabilistic models.
-
----
-
-# License
+## License
 
 MIT
